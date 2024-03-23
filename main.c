@@ -1,81 +1,147 @@
 #include "unity.h"
 #include "interception.h"
+#include <windows.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-// Function to close MyApp.exe if it's running
-void CloseMyApp()
+typedef struct
 {
-  system("taskkill /IM MyApp.exe /F");
-}
+  char *keycode;
+  char *result_type;
+  int result_value;
+} KeyBinding;
 
-// Function to write JSON to a config file
-void WriteConfig()
+InterceptionContext context;
+InterceptionDevice device;
+
+unsigned short key_A = 0x41;
+unsigned short key_B = 0x42;
+unsigned short key_left_arrow = 0x25;
+unsigned short key_up_arrow = 0x26;
+unsigned short key_right_arrow = 0x27;
+unsigned short key_down_arrow = 0x28;
+
+void WriteConfig(KeyBinding *bindings, size_t bindingsCount)
 {
   printf("Writing config file\n");
-  // FILE *file = fopen("path_to_config_file", "w");
-  // if (file == NULL)
-  // {
-  //   TEST_FAIL_MESSAGE("Failed to open config file.");
-  // }
-  // fprintf(file, "{ \"keyBindings\": { \"A\": \"B\" } }");
-  // fclose(file);
+  char *appDataPath = getenv("APPDATA");
+  if (appDataPath == NULL)
+  {
+    printf("Failed to get APPDATA path.\n");
+    return;
+  }
+
+  char configFilePath[1024];
+  snprintf(configFilePath, sizeof(configFilePath), "%s\\OverBind\\OverBind_conf.json", appDataPath);
+
+  FILE *file = fopen(configFilePath, "w");
+  if (file == NULL)
+  {
+    printf("Failed to open config file.\n");
+    return;
+  }
+
+  fprintf(file, "[\n");
+  for (size_t i = 0; i < bindingsCount; ++i)
+  {
+    fprintf(file, "  { \"keycode\": \"%s\", \"result_type\": \"%s\", \"result_value\": %d }",
+            bindings[i].keycode, bindings[i].result_type, bindings[i].result_value);
+    if (i < bindingsCount - 1)
+    {
+      fprintf(file, ",\n");
+    }
+    else
+    {
+      fprintf(file, "\n");
+    }
+  }
+  fprintf(file, "]\n");
+
+  fclose(file);
 }
 
-// Function to open MyApp.exe
-void OpenMyApp()
+void OpenOverbind()
 {
-  printf("Opening MyApp.exe\n");
-  // system("start MyApp.exe");
+  if (system("tasklist | findstr OverBind.exe") == 0)
+  {
+    printf("OverBind is running\n");
+    system("taskkill /IM OverBind.exe /F");
+  }
+  else
+  {
+    printf("OverBind is not running\n");
+  }
+  system("start \"\" \"C:\\Program Files\\OverBind\\OverBind.exe\"");
 }
 
 // Function to simulate pressing and holding key A
-void PressAndHoldKeyA()
+void KeyDown(unsigned short key)
 {
-  printf("Pressing and holding key A\n");
-  // This is a placeholder for calling Interception functions to press and hold key A
+  printf("Pressing key %c\n", key);
+  InterceptionKeyStroke keystroke;
+  keystroke.code = key;
+  keystroke.state = INTERCEPTION_KEY_DOWN;
+
+  interception_send(context, device, (const InterceptionStroke *)&keystroke, 1);
 }
 
 // Function to release key A
-void ReleaseKeyA()
+void KeyUp(unsigned short key)
 {
-  printf("Releasing key A\n");
-  // This is a placeholder for calling Interception functions to release key A
+  printf("Releasing key %c\n", key);
+  InterceptionKeyStroke keystroke;
+  keystroke.code = key;
+  keystroke.state = INTERCEPTION_KEY_UP;
+
+  interception_send(context, device, (const InterceptionStroke *)&keystroke, 1);
 }
 
-// Function to check if a key is being held (placeholder)
-
-bool IsKeyHeld(int keyCode)
+bool IsKeyHeld(int vKey)
 {
-  printf("Checking if key is being held\n");
-  // This should be implemented to return true if the specified key is being held
-  // This could involve using Interception or another method to check the key state
-  return true;
+  // GetAsyncKeyState returns a short where:
+  // - The least significant bit is set if the key was pressed after the previous call.
+  // - The most significant bit is set if the key is currently down.
+  SHORT state = GetAsyncKeyState(vKey);
+
+  return (state & 0x8000) != 0; // Check if the most significant bit is set
 }
 
 // Test function
 void test_KeyBinding_A_To_B()
 {
-  CloseMyApp();
-  WriteConfig();
-  OpenMyApp();
-  TEST_ASSERT_FALSE(IsKeyHeld('B')); // Check that key B is not being held
-  PressAndHoldKeyA();
-  // TEST_ASSERT_TRUE(IsKeyHeld('B')); // Check that key B is now being held
-  ReleaseKeyA();
+  KeyBinding bindings[] = {
+      {"41", "keyboard", 66} // A -> B
+  };
+
+  WriteConfig(bindings, sizeof(bindings) / sizeof(bindings[0]));
+  OpenOverbind();
+  TEST_ASSERT_FALSE(IsKeyHeld(key_B));
+  KeyDown(key_A);
+  TEST_ASSERT_TRUE(IsKeyHeld(key_B));
+  KeyUp(key_A);
 }
 
 void setUp(void)
 {
-  // Any setup code required before running each test.
-  // Leave empty if no setup is needed.
+  context = interception_create_context();
+  char hardware_id[500];
+
+  for (device = INTERCEPTION_KEYBOARD(0); device <= INTERCEPTION_KEYBOARD(INTERCEPTION_MAX_KEYBOARD); device++)
+  {
+    if (interception_is_keyboard(device))
+    {
+      interception_get_hardware_id(context, device, hardware_id, sizeof(hardware_id));
+      printf("Found keyboard device: %s\n", hardware_id);
+      return;
+    }
+  }
+  printf("No keyboard device found\n");
 }
 
 void tearDown(void)
 {
-  // Any teardown code required after running each test.
-  // Leave empty if no teardown is needed.
+  interception_destroy_context(context);
 }
 
 // Main function to run the test
