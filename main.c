@@ -116,32 +116,33 @@ void test_KeyBinding_A_To_B()
 
   WriteConfig(bindings, sizeof(bindings) / sizeof(bindings[0]));
   OpenOverbind();
+  Wait(10 * 1000); // Wait for OverBind to start
   TEST_ASSERT_FALSE(IsKeyHeld(key_B));
-  // KeyDown(key_A);
-  // TEST_ASSERT_TRUE(IsKeyHeld(key_B));
-  // KeyUp(key_A);
+  KeyDown(key_A);
+  TEST_ASSERT_TRUE(IsKeyHeld(key_B));
+  KeyUp(key_A);
 }
 
 void setUp(void)
 {
-  // context = interception_create_context();
-  // char hardware_id[500];
+  context = interception_create_context();
+  char hardware_id[500];
 
-  // for (device = INTERCEPTION_KEYBOARD(0); device <= INTERCEPTION_KEYBOARD(INTERCEPTION_MAX_KEYBOARD); device++)
-  // {
-  //   if (interception_is_keyboard(device))
-  //   {
-  //     interception_get_hardware_id(context, device, hardware_id, sizeof(hardware_id));
-  //     printf("Found keyboard device: %s\n", hardware_id);
-  //     return;
-  //   }
-  // }
-  // printf("No keyboard device found\n");
+  for (device = INTERCEPTION_KEYBOARD(0); device <= INTERCEPTION_KEYBOARD(INTERCEPTION_MAX_KEYBOARD); device++)
+  {
+    if (interception_is_keyboard(device))
+    {
+      interception_get_hardware_id(context, device, hardware_id, sizeof(hardware_id));
+      printf("Found keyboard device: %s\n", hardware_id);
+      return;
+    }
+  }
+  printf("No keyboard device found\n");
 }
 
 void tearDown(void)
 {
-  // interception_destroy_context(context);
+  interception_destroy_context(context);
 }
 
 // Main function to run the test
