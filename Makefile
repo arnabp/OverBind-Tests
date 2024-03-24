@@ -1,26 +1,22 @@
-CC = cl
-CFLAGS = /I "Unity-2.6.0" /I "Interception-1.0.1"
-LDFLAGS = /link /LIBPATH:"Interception-1.0.1/x86" interception.lib User32.lib
+CC = gcc
+CFLAGS = -IUnity-2.6.0 -DUNITY_SUPPORT_64 -IInterception-1.0.1 -g
+LDFLAGS = -LInterception-1.0.1/x64 -linterception -luser32
 
 TARGET = run_tests.exe
-SOURCES = Unity-2.6.0\unity.c main.c
-OBJECTS = Unity-2.6.0\unity.obj main.obj
+SOURCES = Unity-2.6.0/unity.c main.c
+OBJECTS = $(SOURCES:.c=.o)
 
 all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) /Fe$(TARGET) $(CFLAGS) $(LDFLAGS)
+	$(CC) -o $(TARGET) $(OBJECTS) $(LDFLAGS)
 
-{Unity-2.6.0}.c.obj:
-	echo Compiling $<
-	$(CC) $(CFLAGS) /c $< /Fo$@
-
-%.obj: %.c
-	echo Compiling $<
-	$(CC) $(CFLAGS) /c $< /Fo$@
+%.o: %.c
+	@echo Compiling $<
+	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	del $(OBJECTS) $(TARGET)
+	rm -f $(OBJECTS) $(TARGET)
 
 test: $(TARGET)
-	$(TARGET)
+	./$(TARGET)
