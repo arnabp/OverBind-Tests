@@ -150,6 +150,7 @@ void test_KeyBinding_A_To_B()
   WriteConfig(bindings, sizeof(bindings) / sizeof(bindings[0]));
   OpenOverbind();
   OpenNotepad();
+  Sleep(1 * 1000);
   RefocusNotepad();
   TEST_ASSERT_FALSE(IsKeyHeld(key_B));
   KeyDown(key_A);
