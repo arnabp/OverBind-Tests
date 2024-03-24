@@ -116,7 +116,7 @@ void test_KeyBinding_A_To_B()
 
   WriteConfig(bindings, sizeof(bindings) / sizeof(bindings[0]));
   OpenOverbind();
-  Sleep(10 * 1000); // Wait for OverBind to start
+  Sleep(30 * 1000); // Wait for OverBind to start
   TEST_ASSERT_FALSE(IsKeyHeld(key_B));
   KeyDown(key_A);
   TEST_ASSERT_TRUE(IsKeyHeld(key_B));
