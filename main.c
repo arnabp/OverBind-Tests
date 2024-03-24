@@ -89,9 +89,23 @@ void OpenNotepad()
   system("start \"\" notepad.exe");
 }
 
-void FocusNotepad()
+// When overbind is actually ready to go it gets refocused automatically
+// So poll current focused windows until it's overbind again and then refocus notepad
+void RefocusNotepad()
 {
-  system("start \"\" C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -Command \"& { $wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('Notepad') }\"");
+  char buffer[1024];
+  while (1)
+  {
+    HWND hwnd = GetForegroundWindow();
+    GetWindowText(hwnd, buffer, sizeof(buffer));
+    if (strcmp(buffer, "OverBind") == 0)
+    {
+      printf("OverBind is focused\n");
+      break;
+    }
+  }
+
+  system("start \"\" notepad.exe");
 }
 
 // Function to simulate pressing and holding key A
@@ -136,7 +150,7 @@ void test_KeyBinding_A_To_B()
   WriteConfig(bindings, sizeof(bindings) / sizeof(bindings[0]));
   OpenOverbind();
   OpenNotepad();
-  FocusNotepad();
+  RefocusNotepad();
   Sleep(30 * 1000); // Wait for OverBind to start
   TEST_ASSERT_FALSE(IsKeyHeld(key_B));
   KeyDown(key_A);
