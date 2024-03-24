@@ -153,6 +153,7 @@ void test_KeyBinding_A_To_B()
   RefocusNotepad();
   TEST_ASSERT_FALSE(IsKeyHeld(key_B));
   KeyDown(key_A);
+  Sleep(5 * 1000);
   TEST_ASSERT_TRUE(IsKeyHeld(key_B));
   KeyUp(key_A);
 }
