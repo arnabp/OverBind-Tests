@@ -75,6 +75,25 @@ void OpenOverbind()
   system("start \"\" \"C:\\Program Files\\OverBind\\OverBind.exe\"");
 }
 
+void OpenNotepad()
+{
+  if (system("tasklist | findstr notepad.exe") == 0)
+  {
+    printf("Notepad is running\n");
+    system("taskkill /IM notepad.exe /F");
+  }
+  else
+  {
+    printf("Notepad is not running\n");
+  }
+  system("start \"\" notepad.exe");
+}
+
+void FocusNotepad()
+{
+  system("start \"\" C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe -Command \"& { $wshell = New-Object -ComObject wscript.shell; $wshell.AppActivate('Notepad') }\"");
+}
+
 // Function to simulate pressing and holding key A
 void KeyDown(unsigned short key)
 {
@@ -116,6 +135,8 @@ void test_KeyBinding_A_To_B()
 
   WriteConfig(bindings, sizeof(bindings) / sizeof(bindings[0]));
   OpenOverbind();
+  OpenNotepad();
+  FocusNotepad();
   Sleep(30 * 1000); // Wait for OverBind to start
   TEST_ASSERT_FALSE(IsKeyHeld(key_B));
   KeyDown(key_A);
